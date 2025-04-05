@@ -92,7 +92,11 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* TODO: Add "Forgot password?" link here later (FEAT-AUTH-03) */}
+          <div className="text-sm text-right">
+            <Link href="/auth/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-500">
+              Forgot your password?
+            </Link>
+          </div>
 
           {error && (
             <div className="rounded-md bg-red-50 p-4">
