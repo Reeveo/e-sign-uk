@@ -1,5 +1,6 @@
 // src/app/page.tsx
 import Link from 'next/link';
+import AuthButton from '@/components/AuthButton'; // Import the new component
 import { LockClosedIcon, DocumentPlusIcon, PaperAirplaneIcon, PencilSquareIcon } from '@heroicons/react/24/outline'; // Using Heroicons for illustrative icons
 
 export default function Home() {
@@ -9,20 +10,7 @@ export default function Home() {
       <header className="w-full p-4 bg-white shadow-sm">
         <nav className="container mx-auto flex justify-between items-center">
           <span className="text-xl font-bold text-indigo-700">E-Sign UK</span>
-          <div className="flex gap-3">
-            <Link
-              href="/auth/login"
-              className="rounded-md px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
-            >
-              Login
-            </Link>
-            <Link
-              href="/auth/register"
-              className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            >
-              Register
-            </Link>
-          </div>
+          <AuthButton /> {/* Replace static links with the AuthButton component */}
         </nav>
       </header>
 
