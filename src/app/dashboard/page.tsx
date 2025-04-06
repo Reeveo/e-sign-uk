@@ -1,6 +1,6 @@
 import { createClient } from '../../lib/supabase/server';
 import { redirect } from 'next/navigation';
-// No longer need cookies import here
+import DocumentUpload from '@/components/DocumentUpload'; // Import the new component
 
 export default async function DashboardPage() {
   // createClient now handles cookies internally
@@ -21,6 +21,8 @@ export default async function DashboardPage() {
       <h1>Welcome to your Dashboard!</h1>
       {user.email && <p>Logged in as: {user.email}</p>}
       {/* Dashboard content will go here */}
+      <hr style={{ margin: '20px 0' }} />
+      <DocumentUpload userId={user.id} />
     </div>
   );
 }
