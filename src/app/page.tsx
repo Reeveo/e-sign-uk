@@ -5,11 +5,11 @@ import { LockClosedIcon, DocumentPlusIcon, PaperAirplaneIcon, PencilSquareIcon }
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-gray-50 to-indigo-100">
+    <div className="flex flex-col min-h-screen bg-brand-white">
       {/* Header/Nav Placeholder - Can be added later */}
-      <header className="w-full p-4 bg-white shadow-sm">
+      <header className="w-full p-4 bg-brand-white shadow-sm">
         <nav className="container mx-auto flex justify-between items-center">
-          <span className="text-xl font-bold text-indigo-700">E-Sign UK</span>
+          <span className="text-xl font-bold text-brand-primary">E-Sign UK</span>
           <AuthButton /> {/* Replace static links with the AuthButton component */}
         </nav>
       </header>
@@ -24,32 +24,32 @@ export default function Home() {
         </p>
         <Link
           href="/auth/register"
-          className="inline-block rounded-md bg-indigo-600 px-8 py-3 text-lg font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          className="inline-block rounded-md bg-brand-primary px-8 py-3 text-lg font-medium text-brand-white shadow-sm hover:bg-brand-primary/90 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2"
         >
           Get Started for Free
         </Link>
       </main>
 
       {/* Features/How it Works Section */}
-      <section className="bg-white py-16 px-6">
+      <section className="bg-brand-white py-16 px-6">
         <div className="container mx-auto text-center">
           <h2 className="text-3xl font-bold text-gray-900 mb-12">How E-Sign UK Works</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             {/* Step 1 */}
             <div className="flex flex-col items-center">
-              <DocumentPlusIcon className="h-12 w-12 text-indigo-600 mb-4" />
+              <DocumentPlusIcon className="h-12 w-12 text-brand-primary mb-4" />
               <h3 className="text-xl font-semibold mb-2">1. Upload Document</h3>
               <p className="text-gray-600">Easily upload your PDF documents directly to our secure platform.</p>
             </div>
             {/* Step 2 */}
             <div className="flex flex-col items-center">
-              <PencilSquareIcon className="h-12 w-12 text-indigo-600 mb-4" />
+              <PencilSquareIcon className="h-12 w-12 text-brand-primary mb-4" />
               <h3 className="text-xl font-semibold mb-2">2. Prepare &amp; Send</h3>
               <p className="text-gray-600">Add signature fields, assign signers, and specify the signing order.</p>
             </div>
             {/* Step 3 */}
             <div className="flex flex-col items-center">
-              <PaperAirplaneIcon className="h-12 w-12 text-indigo-600 mb-4" />
+              <PaperAirplaneIcon className="h-12 w-12 text-brand-primary mb-4" />
               <h3 className="text-xl font-semibold mb-2">3. Sign &amp; Manage</h3>
               <p className="text-gray-600">Signers receive secure links to sign, and you track progress on your dashboard.</p>
             </div>
@@ -58,9 +58,9 @@ export default function Home() {
       </section>
 
       {/* Security Section */}
-      <section className="bg-indigo-50 py-16 px-6">
+      <section className="bg-brand-secondary/10 py-16 px-6"> {/* Using a light shade of secondary */}
         <div className="container mx-auto text-center">
-           <LockClosedIcon className="h-12 w-12 text-indigo-600 mb-4 mx-auto" />
+           <LockClosedIcon className="h-12 w-12 text-brand-primary mb-4 mx-auto" />
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Trustworthy &amp; Secure</h2>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
             We prioritize your security. Documents are encrypted, access is controlled, and our processes align with UK e-signature standards (like eIDAS) to ensure legal admissibility. Your data is handled following GDPR principles.
@@ -69,7 +69,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="w-full p-6 mt-auto bg-gray-200 text-center text-sm text-gray-600">
+      <footer className="w-full p-6 mt-auto bg-gray-100 text-center text-sm text-gray-600"> {/* Slightly lighter gray */}
         &amp;copy; {new Date().getFullYear()} E-Sign UK. All rights reserved.
         {/* TODO: Add links to Privacy Policy/Terms */}
         <div className="mt-2">

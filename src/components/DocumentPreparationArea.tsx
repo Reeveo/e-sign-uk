@@ -91,7 +91,7 @@ const DocumentPreparationAreaInternal: React.FC<DocumentPreparationAreaProps> = 
       {/* Drop Target Area & PDF Viewer */}
       <div
         ref={dropTargetRef}
-        className={`flex-grow border relative ${isOver && canDrop ? 'bg-green-100' : 'bg-gray-100'} overflow-auto`} // Combined classes, added overflow-auto
+        className={`flex-grow border relative ${isOver && canDrop ? 'bg-brand-green bg-opacity-25' : 'bg-brand-white'} overflow-auto`} // Use brand colors for drop area
       >
         {/* PDF Viewer */}
         <div className="relative"> {/* Container for positioning fields */}
@@ -101,7 +101,7 @@ const DocumentPreparationAreaInternal: React.FC<DocumentPreparationAreaProps> = 
           {placedFields.map((field) => (
             <div
               key={field.id}
-              className="absolute p-1 border bg-yellow-200 bg-opacity-75 text-xs rounded cursor-move" // Basic styling for placed fields
+              className="absolute p-1 border bg-brand-secondary bg-opacity-50 text-xs rounded cursor-move" // Use brand color for placed fields
               style={{ left: `${field.x}px`, top: `${field.y}px` }}
               // Add drag logic here for bonus if implementing repositioning
             >

@@ -59,13 +59,13 @@ export default function AuthButton() {
           <span>{session.user.email}</span>
           <Link
             href="/dashboard"
-            className="py-2 px-3 flex rounded-md no-underline bg-gray-200 hover:bg-gray-300 text-gray-800" // Added dashboard link with styling
+            className="py-2 px-3 flex rounded-md no-underline bg-gray-200 hover:bg-gray-300 text-gray-800" // Neutral dashboard link styling
           >
             Dashboard
           </Link>
           <button
             onClick={handleLogout}
-            className="py-2 px-4 rounded-md no-underline bg-btn-background hover:bg-btn-background-hover" // Assuming these classes exist in globals.css
+            className="py-2 px-4 rounded-md no-underline bg-brand-primary hover:bg-brand-secondary text-brand-white" // Applied brand colors
           >
             Logout
           </button>
@@ -74,13 +74,13 @@ export default function AuthButton() {
         <>
           <Link
             href="/auth/login"
-            className="py-2 px-3 flex rounded-md no-underline bg-btn-background hover:bg-btn-background-hover" // Assuming these classes exist
+            className="py-2 px-3 flex rounded-md no-underline bg-brand-primary hover:bg-brand-secondary text-brand-white" // Applied brand colors
           >
             Login
           </Link>
           <Link
             href="/auth/register"
-            className="py-2 px-3 flex rounded-md no-underline bg-btn-background hover:bg-btn-background-hover" // Assuming these classes exist
+            className="py-2 px-3 flex rounded-md no-underline bg-brand-primary hover:bg-brand-secondary text-brand-white" // Applied brand colors
           >
             Register
           </Link>

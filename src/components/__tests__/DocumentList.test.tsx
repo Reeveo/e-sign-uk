@@ -94,13 +94,13 @@ describe('DocumentList Component', () => {
      expect(within(rows[2]).getByText('N/A')).toBeInTheDocument();
      // Specific check for status styling class (example for Completed)
      const completedStatusSpan = within(rows[1]).getByText('Completed');
-     expect(completedStatusSpan).toHaveClass('bg-green-100', 'text-green-800'); // Example class check
+     expect(completedStatusSpan).toHaveClass('bg-brand-green', 'text-brand-white'); // Updated class check for completed
      // Specific check for status styling class (example for Pending)
      const pendingStatusSpan = within(rows[2]).getByText('Pending');
-     expect(pendingStatusSpan).toHaveClass('bg-yellow-100', 'text-yellow-800'); // Example class check
+     expect(pendingStatusSpan).toHaveClass('bg-brand-secondary', 'text-brand-white'); // Updated class check for pending
      // Specific check for status styling class (example for draft/default)
      const draftStatusSpan = within(rows[0]).getByText('draft');
-     expect(draftStatusSpan).toHaveClass('bg-gray-100', 'text-gray-800'); // Example class check
+     expect(draftStatusSpan).toHaveClass('bg-gray-200', 'text-gray-700'); // Updated class check for draft/default
 
   });
 });

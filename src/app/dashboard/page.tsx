@@ -29,7 +29,7 @@ export default async function DashboardPage() {
     // For now, we'll proceed with an empty array or handle it in the component
   }
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-50"> {/* Lighter gray background */}
       {/* Optional Sidebar Placeholder - uncomment and style if needed later
       <div className="w-64 bg-white shadow-md hidden md:block">
         <div className="p-4">
@@ -42,14 +42,14 @@ export default async function DashboardPage() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Dashboard Header */}
-        <header className="bg-white shadow-sm">
+        <header className="bg-brand-white shadow-sm">
           <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
             <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6"> {/* Consistent lighter gray */}
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             {/* Welcome Message */}
             <div className="mb-8">
@@ -62,7 +62,7 @@ export default async function DashboardPage() {
             </div>
 
             {/* Document Upload Section */}
-            <div className="bg-white shadow rounded-lg p-6">
+            <div className="bg-brand-white shadow rounded-lg p-6">
               <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
                 Upload New Document
               </h3>
@@ -70,7 +70,7 @@ export default async function DashboardPage() {
             </div>
 
             {/* Document List Section */}
-            <div className="mt-8 bg-white shadow rounded-lg p-6">
+            <div className="mt-8 bg-brand-white shadow rounded-lg p-6">
               <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Your Documents</h3>
               <DocumentList documents={documents || []} /> {/* Render DocumentList and pass documents */}
             </div>

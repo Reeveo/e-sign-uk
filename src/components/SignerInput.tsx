@@ -44,7 +44,7 @@ const SignerInput: React.FC<SignerInputProps> = ({
   };
 
   return (
-    <div className="p-4 border rounded-lg shadow-sm bg-white">
+    <div className="p-4 border rounded-lg shadow-sm bg-brand-white"> // Use brand white for container
       <h3 className="text-lg font-semibold mb-3">Signers</h3>
       <div className="flex gap-2 mb-4">
         <input
@@ -53,11 +53,11 @@ const SignerInput: React.FC<SignerInputProps> = ({
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder="Signer's email address"
-          className="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          className="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-primary focus:border-brand-primary sm:text-sm" // Use brand color for focus
         />
         <button
           onClick={handleAddClick}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+          className="px-4 py-2 bg-brand-primary text-brand-white rounded-md hover:bg-brand-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary disabled:opacity-50" // Use brand colors for add button
           disabled={!email.trim()}
         >
           Add

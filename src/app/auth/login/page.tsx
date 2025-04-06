@@ -51,7 +51,7 @@ export default function LoginPage() {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Or{' '}
-            <Link href="/auth/register" className="font-medium text-indigo-600 hover:text-indigo-500">
+            <Link href="/auth/register" className="font-medium text-brand-primary hover:text-brand-primary/80">
               create an account
             </Link>
           </p>
@@ -70,7 +70,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="relative block w-full appearance-none rounded-none rounded-t-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                className="relative block w-full appearance-none rounded-none rounded-t-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-brand-primary focus:outline-none focus:ring-brand-primary sm:text-sm"
                 placeholder="Email address"
               />
             </div>
@@ -86,14 +86,14 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="relative block w-full appearance-none rounded-none rounded-b-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                className="relative block w-full appearance-none rounded-none rounded-b-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-brand-primary focus:outline-none focus:ring-brand-primary sm:text-sm"
                 placeholder="Password"
               />
             </div>
           </div>
 
           <div className="text-sm text-right">
-            <Link href="/auth/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-500">
+            <Link href="/auth/forgot-password" className="font-medium text-brand-primary hover:text-brand-primary/80">
               Forgot your password?
             </Link>
           </div>
@@ -108,10 +108,10 @@ export default function LoginPage() {
             </div>
           )}
           {message && (
-            <div className="rounded-md bg-green-50 p-4">
+            <div className="rounded-md bg-brand-green/10 p-4"> {/* Use brand green for success */}
               <div className="flex">
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-green-800">{message}</p>
+                  <p className="text-sm font-medium text-brand-green">{message}</p> {/* Use brand green for success */}
                 </div>
               </div>
             </div>
@@ -120,7 +120,7 @@ export default function LoginPage() {
           <div>
             <button
               type="submit"
-              className="group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              className="group relative flex w-full justify-center rounded-md border border-transparent bg-brand-primary py-2 px-4 text-sm font-medium text-brand-white hover:bg-brand-primary/90 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2"
             >
               Sign in
             </button>

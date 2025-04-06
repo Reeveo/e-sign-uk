@@ -52,7 +52,7 @@ export default function PdfViewer({ signedUrl }: PdfViewerProps) {
 
       {!isLoading && !loadError && (
         <>
-          <div className="pdf-document-container bg-gray-100 p-2 flex justify-center">
+          <div className="pdf-document-container bg-brand-white p-2 flex justify-center"> // Use brand white for main container
             <Document
               file={signedUrl}
               onLoadSuccess={onDocumentLoadSuccess}
@@ -80,12 +80,12 @@ export default function PdfViewer({ signedUrl }: PdfViewerProps) {
 
           {/* Using literal && and > */}
           {numPages && numPages > 1 && (
-            <div className="pdf-controls flex justify-between items-center p-2 border-t bg-gray-50">
+            <div className="pdf-controls flex justify-between items-center p-2 border-t bg-gray-100"> // Use light gray for controls background
               <button
                 type="button"
                 disabled={pageNumber <= 1}
                 onClick={goToPreviousPage}
-                className="px-3 py-1 border rounded bg-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 border rounded bg-brand-white text-sm disabled:opacity-50 disabled:cursor-not-allowed" // Use brand white for buttons
               >
                 Previous
               </button>
@@ -97,7 +97,7 @@ export default function PdfViewer({ signedUrl }: PdfViewerProps) {
                 // Corrected null check for numPages
                 disabled={!numPages || pageNumber >= numPages}
                 onClick={goToNextPage}
-                className="px-3 py-1 border rounded bg-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 border rounded bg-brand-white text-sm disabled:opacity-50 disabled:cursor-not-allowed" // Use brand white for buttons
               >
                 Next
               </button>

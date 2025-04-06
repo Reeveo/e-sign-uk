@@ -61,10 +61,10 @@ export default function DocumentList({ documents }: DocumentListProps) {
                 <span
                   className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                     doc.status === 'Completed' // Example status check
-                      ? 'bg-green-100 text-green-800'
+                      ? 'bg-brand-green text-brand-white' // Use brand green for completed
                       : doc.status === 'Pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-gray-100 text-gray-800' // Default/Draft
+                        ? 'bg-brand-secondary text-brand-white' // Use brand secondary for pending
+                        : 'bg-gray-200 text-gray-700' // Keep neutral gray for default/draft
                   }`}
                 >
                   {doc.status || 'Draft'}
@@ -76,7 +76,7 @@ export default function DocumentList({ documents }: DocumentListProps) {
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <Link
                   href={`/documents/${doc.id}/prepare`} // Placeholder link
-                  className="text-indigo-600 hover:text-indigo-900 mr-4"
+                  className="text-brand-primary hover:text-brand-secondary mr-4" // Use brand colors for primary action link
                 >
                   Prepare
                 </Link>

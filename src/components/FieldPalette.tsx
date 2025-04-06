@@ -48,7 +48,7 @@ const DraggableField: React.FC<DraggableFieldProps> = ({ fieldType, label }) => 
       ref={ref} // Assign the created ref to the div
       className={`p-2 m-1 border rounded cursor-grab ${
         isDragging ? 'opacity-50' : 'opacity-100'
-      } bg-blue-100 hover:bg-blue-200`}
+      } bg-brand-secondary bg-opacity-75 hover:bg-brand-secondary text-brand-white`} // Use brand color for draggable fields
       role="button"
       aria-label={`Drag ${label} field`}
     >
@@ -60,7 +60,7 @@ const DraggableField: React.FC<DraggableFieldProps> = ({ fieldType, label }) => 
 // The main palette component
 const FieldPalette: React.FC = () => {
   return (
-    <div className="p-4 border rounded shadow-md bg-gray-50 w-48">
+    <div className="p-4 border rounded shadow-md bg-brand-white w-48"> // Use brand white for palette background
       <h3 className="text-lg font-semibold mb-2">Fields</h3>
       <DraggableField fieldType={FieldTypes.SIGNATURE} label="Signature" />
       <DraggableField fieldType={FieldTypes.INITIALS} label="Initials" />
