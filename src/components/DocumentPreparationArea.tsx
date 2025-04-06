@@ -5,7 +5,8 @@ import { DndProvider, useDrop, XYCoord } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import PdfViewer from './PdfViewer';
 import FieldPalette, { FieldTypes } from './FieldPalette';
-import SignerInput from './SignerInput'; // Import the new component
+import SignerInput from './SignerInput';
+import FieldProperties from './FieldProperties'; // Import the new component
 import { v4 as uuidv4 } from 'uuid';
 // Define the structure for a placed field
 interface PlacedField {
@@ -13,6 +14,7 @@ interface PlacedField {
   type: string; // Corresponds to one of the FieldTypes values
   x: number; // Position relative to the drop target
   y: number;
+  signerEmail?: string; // Optional: Email of the assigned signer
 }
 
 // Define the structure for a signer
@@ -35,6 +37,7 @@ const DocumentPreparationAreaInternal: React.FC<DocumentPreparationAreaProps> = 
   const [placedFields, setPlacedFields] = useState<PlacedField[]>([]);
   const [signers, setSigners] = useState<Signer[]>([]); // State for signers
   const dropTargetRef = useRef<HTMLDivElement>(null); // Ref for the drop target area
+  const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null); // State for selected field ID
 
   // useDrop hook setup
   const [{ canDrop, isOver }, drop] = useDrop(() => ({
@@ -80,12 +83,74 @@ const DocumentPreparationAreaInternal: React.FC<DocumentPreparationAreaProps> = 
     setSigners((prevSigners) => [...prevSigners, newSigner]);
   };
 
+  // Handler to remove a signer
+  const handleRemoveSigner = (idToRemove: string) => {
+    const signerToRemove = signers.find(s => s.id === idToRemove);
+    if (!signerToRemove) return;
+
+    // Remove the signer from the list
+    setSigners((prevSigners) => prevSigners.filter((signer) => signer.id !== idToRemove));
+
+    // Unassign this signer from any fields
+    setPlacedFields((prevFields) =>
+      prevFields.map((field) =>
+        field.signerEmail === signerToRemove.email ? { ...field, signerEmail: undefined } : field
+      )
+    );
+
+    // If the removed signer was assigned to the currently selected field, update properties panel
+    if (selectedField?.signerEmail === signerToRemove.email) {
+        // The selectedField state derived below will update automatically,
+        // but if we wanted direct action, it could go here.
+    }
+  };
+
+  // Handler to reorder signers
+  const handleReorderSigners = (reorderedSigners: Signer[]) => {
+    setSigners(reorderedSigners);
+    // Note: Field assignments don't need to change on reorder, only the signing sequence matters.
+  };
+
+  // Handler to select a field
+  const handleSelectField = (fieldId: string) => {
+    setSelectedFieldId(fieldId);
+  };
+
+  // Handler to assign a signer to the selected field
+  const handleAssignSigner = (signerEmail: string | null) => {
+    if (!selectedFieldId) return;
+
+    setPlacedFields((prevFields) =>
+      prevFields.map((field) =>
+        field.id === selectedFieldId
+          ? { ...field, signerEmail: signerEmail ?? undefined } // Use undefined if null to remove assignment
+          : field
+      )
+    );
+    // Optionally, deselect field after assignment?
+    // setSelectedFieldId(null);
+  };
+
+  // Find the selected field object based on the ID
+  const selectedField = placedFields.find(field => field.id === selectedFieldId) || null;
+
   return (
     <div className="flex flex-row gap-4 h-[calc(100vh-150px)]"> {/* Main flex container */}
       {/* Sidebar for Palette and Signers */}
       <div className="w-64 flex-shrink-0 space-y-4 overflow-y-auto p-2 border-r"> {/* Added sidebar */}
-        <SignerInput signers={signers} onAddSigner={handleAddSigner} />
+        <SignerInput
+          signers={signers}
+          onAddSigner={handleAddSigner}
+          onRemoveSigner={handleRemoveSigner}
+          onReorderSigners={handleReorderSigners}
+        />
         <FieldPalette />
+        {/* Conditionally render FieldProperties when a field is selected */}
+        <FieldProperties
+           selectedField={selectedField}
+           signers={signers}
+           onAssignSigner={handleAssignSigner}
+        />
       </div>
 
       {/* Drop Target Area & PDF Viewer */}
@@ -98,21 +163,32 @@ const DocumentPreparationAreaInternal: React.FC<DocumentPreparationAreaProps> = 
           <PdfViewer signedUrl={signedUrl} />
 
           {/* Render Placed Fields */}
-          {placedFields.map((field) => (
-            <div
-              key={field.id}
-              className="absolute p-1 border bg-brand-secondary bg-opacity-50 text-xs rounded cursor-move" // Use brand color for placed fields
-              style={{ left: `${field.x}px`, top: `${field.y}px` }}
-              // Add drag logic here for bonus if implementing repositioning
-            >
-              {field.type}
-            </div>
-          ))}
+          {placedFields.map((field) => {
+            const isSelected = field.id === selectedFieldId;
+            return (
+              <div
+                key={field.id}
+                className={`absolute p-1 border text-xs rounded cursor-pointer ${
+                  isSelected
+                    ? 'border-brand-primary ring-2 ring-brand-primary bg-brand-secondary bg-opacity-75' // Highlight selected field
+                    : 'border-gray-400 bg-brand-secondary bg-opacity-50 hover:bg-opacity-60' // Standard appearance
+                }`}
+                style={{ left: `${field.x}px`, top: `${field.y}px` }}
+                onClick={() => handleSelectField(field.id)}
+                // Add drag logic here for bonus if implementing repositioning
+              >
+                {field.type}
+                {/* Optional: Display assigned signer info directly */}
+                {/* {field.signerEmail && <span className="block text-[10px] truncate">({field.signerEmail})</span>} */}
+              </div>
+            );
+          })}
+          {/* ))}` <-- Remove this extra closing part */}
         </div>
       </div>
     </div>
   );
-};
+}; // <-- This should be the closing brace for the DocumentPreparationAreaInternal component function
 
 // Wrapper component to provide DndProvider
 const DocumentPreparationArea: React.FC<DocumentPreparationAreaProps> = (props) => (
