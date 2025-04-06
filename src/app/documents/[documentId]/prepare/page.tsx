@@ -11,8 +11,8 @@ interface PrepareDocumentPageProps {
   };
 }
 
-export default async function PrepareDocumentPage({ params }: PrepareDocumentPageProps) {
-  const { documentId } = params;
+export default async function PrepareDocumentPage({ params: { documentId } }: PrepareDocumentPageProps) {
+  // Destructure documentId directly from params in the function signature
   const supabase = createClient();
 
   // Fetch document data
