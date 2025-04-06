@@ -45,8 +45,12 @@ export default function DocumentList({ documents }: DocumentListProps) {
             >
               Uploaded On
             </th>
-            <th scope="col" className="relative px-6 py-3">
-              <span className="sr-only">Actions</span>
+            {/* Make Actions header visible */}
+            <th
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Actions
             </th>
           </tr>
         </thead>
@@ -74,9 +78,10 @@ export default function DocumentList({ documents }: DocumentListProps) {
                 {format(new Date(doc.created_at), 'PPpp')} {/* Format date */}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                {/* Style Prepare link as a button */}
                 <Link
-                  href={`/documents/${doc.id}/prepare`} // Placeholder link
-                  className="text-brand-primary hover:text-brand-secondary mr-4" // Use brand colors for primary action link
+                  href={`/documents/${doc.id}/prepare`}
+                  className="inline-block bg-brand-primary text-brand-white hover:bg-brand-primary/90 text-xs font-semibold py-1 px-3 rounded-md mr-2 transition duration-150 ease-in-out"
                 >
                   Prepare
                 </Link>

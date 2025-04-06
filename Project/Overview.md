@@ -29,6 +29,16 @@ This document outlines the requirements for "E-Sign UK," a new web-based electro
 * Users can add one or more signers to a document.
 * Users can specify the signing order (sequential workflow).
 * Users can designate recipients who receive the final, fully executed document (can include signers and non-signers).
+*
+* **4.2.1 Document Preparation Workflow**
+* The typical user workflow for preparing a document for signing after initial upload is as follows:
+* 1.  **Upload Document:** The user uploads a PDF document via the `DocumentUpload` component on their Dashboard (FEAT-DOC-01).
+* 2.  **System Processing:** The system securely stores the document (Supabase Storage), creates a corresponding record in the database, and redirects the user to the dedicated Document Preparation page (`/documents/[documentId]/prepare`).
+* 3.  **Add Signers:** Using the `SignerInput` panel, the user adds the names and email addresses of all required signers (Part of FEAT-DOC-03).
+* 4.  **Set Signing Order:** The user defines the sequence in which signers must sign the document (Part of FEAT-DOC-03).
+* 5.  **Place Fields:** The user utilizes the `FieldPalette` and the `DocumentPreparationArea` (which includes the `PdfViewer`) to drag and drop required signature fields (Signature, Initials, Date Signed, Text Box, etc.) onto the document preview (FEAT-DOC-02).
+* 6.  **Assign Fields:** For each placed field, the user selects the field and uses the `FieldProperties` panel (or similar mechanism) to assign it to a specific signer added in step 3 (FEAT-DOC-02).
+* 7.  **Save Preparation:** The user saves the current state. This action persists the added signers, their order, the placed fields (type, position, assigned signer) to the database, associating them with the document record. The document is now ready to be sent (FEAT-DOC-04).
 * FEAT-DOC-04: Sending & Notifications:
 * Initiate the signing process, sending an email notification to the first signer in the sequence via Mailgun.
 * Email should contain a secure, unique link to the signing page.

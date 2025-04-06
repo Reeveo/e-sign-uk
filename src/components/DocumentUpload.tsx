@@ -94,7 +94,8 @@ export default function DocumentUpload({ userId }: DocumentUploadProps) {
 
   return (
     <div>
-      <h2 className="text-base font-medium text-gray-700 mb-3">Upload Document (PDF only)</h2>
+      {/* Title adjusted for consistency */}
+      <h2 className="text-base font-medium text-gray-900 mb-3">Upload Document (PDF only)</h2>
       <form onSubmit={handleUpload} className="space-y-4">
         <div>
           <label htmlFor="file-upload" className="sr-only">Choose file</label>

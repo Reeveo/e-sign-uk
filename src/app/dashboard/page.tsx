@@ -1,7 +1,8 @@
 import { createClient } from '../../lib/supabase/server';
 import { redirect } from 'next/navigation';
 import DocumentUpload from '@/components/DocumentUpload';
-import DocumentList from '@/components/DocumentList'; // Import the DocumentList component
+import DocumentList from '@/components/DocumentList';
+import AuthButton from '@/components/AuthButton'; // Import AuthButton
 export default async function DashboardPage() {
   // createClient now handles cookies internally
   const supabase = createClient();
@@ -42,16 +43,32 @@ export default async function DashboardPage() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Dashboard Header */}
-        <header className="bg-brand-white shadow-sm">
-          <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-            <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+        {/* Updated Header with Title and Auth Button */}
+        <header className="bg-brand-primary shadow-sm text-brand-white">
+          <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <h1 className="text-2xl font-semibold">E-Sign UK</h1>
+            <AuthButton />
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6"> {/* Consistent lighter gray */}
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6"> {/* Slightly darker gray for contrast */}
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Welcome Message */}
+
+            {/* Status Metrics Placeholder */}
+            <div className="mb-8 bg-brand-white shadow rounded-lg p-6">
+              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-2">
+                Document Status Overview
+              </h3>
+              <p className="text-sm text-gray-500">
+                Metrics like "In Progress", "Completed", and "Waiting for You" will appear here. (FEAT-DASH-03)
+              </p>
+              {/* Placeholder content or components for metrics can go here */}
+            </div>
+
+
+            {/* Welcome Message - Can be removed or kept based on preference */}
+            {/*
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-gray-800 mb-2">
                 Welcome back!
@@ -60,6 +77,7 @@ export default async function DashboardPage() {
                 <p className="text-sm text-gray-600">Logged in as: {user.email}</p>
               )}
             </div>
+            */}
 
             {/* Document Upload Section */}
             <div className="bg-brand-white shadow rounded-lg p-6">
