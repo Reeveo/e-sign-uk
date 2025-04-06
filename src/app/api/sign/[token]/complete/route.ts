@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { Database } from '@/types/database.types';
 import crypto from 'crypto'; // Import crypto for token generation
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'; // Import pdf-lib
+import { Buffer } from 'buffer'; // Needed for handling binary data
 
 type FieldDataMap = { [fieldId: string]: string | null }; // Assuming fieldId is string, value can be string or null
 
@@ -175,6 +177,145 @@ export async function POST(
                 // Log error, but don't fail the request
             } else {
                 console.log(`Document ${document_id} signing process completed.`);
+
+                // --- Generate Final Document and Audit Trail ---
+                try {
+                    // 1. Fetch all necessary data
+                    const { data: documentData, error: docError } = await supabase
+                        .from('documents')
+                        .select('id, name, storage_path')
+                        .eq('id', document_id)
+                        .single();
+
+                    if (docError || !documentData) throw new Error(`Failed to fetch document details: ${docError?.message}`);
+
+                    const { data: allSigners, error: signersError } = await supabase
+                        .from('document_signers')
+                        .select('signer_email, signed_at, ip_address')
+                        .eq('document_id', document_id)
+                        .eq('token_status', 'completed') // Only completed signers
+                        .order('order', { ascending: true });
+
+                    if (signersError) throw new Error(`Failed to fetch signers: ${signersError.message}`);
+
+                    const { data: allFields, error: fieldsError } = await supabase
+                        .from('document_fields')
+                        .select('id, type, value, position_x, position_y, page_number, width, height') // Include dimensions
+                        .eq('document_id', document_id)
+                        .neq('value', null); // Only fields with values
+
+                    if (fieldsError) throw new Error(`Failed to fetch fields: ${fieldsError.message}`);
+
+                    // 2. Download original PDF from Storage
+                    const { data: downloadData, error: downloadError } = await supabase
+                        .storage
+                        .from('documents') // Bucket name
+                        .download(documentData.storage_path);
+
+                    if (downloadError || !downloadData) throw new Error(`Failed to download original PDF: ${downloadError?.message}`);
+                    const originalPdfBytes = await downloadData.arrayBuffer();
+
+                    // 3. Generate Audit Trail Log
+                    let auditTrailLog = `--- Audit Trail for Document: ${documentData.name} (ID: ${documentData.id}) ---\n`;
+                    auditTrailLog += `Completion Time: ${new Date().toISOString()}\n\n`;
+                    if (allSigners && allSigners.length > 0) {
+                        allSigners.forEach((signer, index) => {
+                            auditTrailLog += `Signer ${index + 1}:\n`;
+                            auditTrailLog += `  Email: ${signer.signer_email}\n`;
+                            auditTrailLog += `  Signed At: ${signer.signed_at}\n`;
+                            auditTrailLog += `  IP Address: ${signer.ip_address}\n\n`;
+                        });
+                    } else {
+                        auditTrailLog += "No completed signers found (this might indicate an issue).\n\n";
+                    }
+                    auditTrailLog += `Intent: All parties agreed to conduct this transaction electronically.\n`;
+                    auditTrailLog += `--- End Audit Trail ---`;
+
+                    console.log(auditTrailLog); // Log the audit trail
+
+                    // 4. Modify PDF with field data
+                    const pdfDoc = await PDFDocument.load(originalPdfBytes);
+                    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica); // Use a standard font
+
+                    if (allFields && allFields.length > 0) {
+                        for (const field of allFields) {
+                            if (field.value && field.page_number !== null && field.position_x !== null && field.position_y !== null) {
+                                const page = pdfDoc.getPage(field.page_number - 1); // pdf-lib is 0-indexed
+                                const { width: pageWidth, height: pageHeight } = page.getSize();
+
+                                // Adjust Y coordinate: PDF origin (0,0) is bottom-left
+                                const pdfY = pageHeight - (field.position_y + (field.height ?? 20)); // Adjust using field height (default 20 if null)
+
+                                const options = {
+                                    x: field.position_x,
+                                    y: pdfY,
+                                    font: helveticaFont,
+                                    size: 10, // Adjust size as needed
+                                    color: rgb(0, 0, 0), // Black text
+                                };
+
+                                if (field.type === 'signature' || field.type === 'initial') {
+                                    if (field.value.startsWith('data:image/png;base64,')) {
+                                        try {
+                                            const pngImageBytes = Buffer.from(field.value.split(',')[1], 'base64');
+                                            const pngImage = await pdfDoc.embedPng(pngImageBytes);
+                                            // Calculate aspect ratio to fit within field bounds (optional, simple placement for now)
+                                            const fieldWidth = field.width ?? 100; // Default width if null
+                                            const fieldHeight = field.height ?? 40; // Default height if null
+                                            page.drawImage(pngImage, {
+                                                x: field.position_x,
+                                                y: pdfY,
+                                                width: fieldWidth,
+                                                height: fieldHeight,
+                                            });
+                                        } catch (imgError: any) {
+                                            console.error(`Error embedding image for field ${field.id}: ${imgError.message}. Falling back to text.`);
+                                            // Fallback: Draw the text "Signature" or "Initial" if image fails
+                                            page.drawText(field.type === 'signature' ? '[Signature]' : '[Initial]', { ...options, size: 8, color: rgb(0.5, 0.5, 0.5) });
+                                        }
+                                    } else {
+                                        // Handle typed signature/initial as text
+                                        page.drawText(field.value, options);
+                                    }
+                                } else if (field.type === 'date') {
+                                    // Format date if needed, assuming it's stored reasonably
+                                    page.drawText(field.value, options);
+                                } else { // text, etc.
+                                    page.drawText(field.value, options);
+                                }
+                            }
+                        }
+                    }
+
+                    // 5. Save modified PDF to ArrayBuffer
+                    const modifiedPdfBytes = await pdfDoc.save();
+
+                    // 6. Upload modified PDF to Storage
+                    const signedPdfPath = `${documentData.storage_path.replace(/\.pdf$/i, '')}_signed.pdf`;
+                    const { error: uploadError } = await supabase
+                        .storage
+                        .from('documents')
+                        .upload(signedPdfPath, modifiedPdfBytes, {
+                            contentType: 'application/pdf',
+                            upsert: true // Overwrite if it already exists
+                        });
+
+                    if (uploadError) {
+                        throw new Error(`Failed to upload signed PDF: ${uploadError.message}`);
+                    }
+
+                    console.log(`Signed PDF generated and uploaded to: ${signedPdfPath}`);
+
+                    // Optional: Update document record with signed path
+                    // await supabase.from('documents').update({ signed_storage_path: signedPdfPath }).eq('id', document_id);
+
+
+                } catch (generationError: any) {
+                    console.error(`Error during final document generation for ${document_id}:`, generationError);
+                    // Don't fail the entire request, but log the error.
+                    // The main signing process for this user was successful.
+                }
+                // --- End Generate Final Document ---
             }
         }
 
