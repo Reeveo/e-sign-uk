@@ -40,8 +40,10 @@ const DocumentPreparationAreaInternal: React.FC<DocumentPreparationAreaProps> = 
   const [signers, setSigners] = useState<Signer[]>([]); // State for signers
   const dropTargetRef = useRef<HTMLDivElement>(null); // Ref for the drop target area
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null); // State for selected field ID
-  const [isSaving, setIsSaving] = useState<boolean>(false); // State for loading indicator
+  const [isSaving, setIsSaving] = useState<boolean>(false); // State for loading indicator (covers both save and send)
   const [saveError, setSaveError] = useState<string | null>(null); // State for save errors
+  const [sendStatus, setSendStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [sendError, setSendError] = useState<string | null>(null); // State for send errors
 
   // useDrop hook setup
   const [{ canDrop, isOver }, drop] = useDrop(() => ({
@@ -141,8 +143,10 @@ const DocumentPreparationAreaInternal: React.FC<DocumentPreparationAreaProps> = 
 
   // Handler to save the preparation state
   const handleSave = async () => {
-    setIsSaving(true);
+    setIsSaving(true); // Indicate loading starts
     setSaveError(null);
+    setSendStatus('idle'); // Reset send status on new attempt
+    setSendError(null);
 
     // Prepare payload for the API
     const payload = {
@@ -175,18 +179,43 @@ const DocumentPreparationAreaInternal: React.FC<DocumentPreparationAreaProps> = 
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
 
-      // Handle success (e.g., show message, navigate)
-      alert('Preparation saved successfully!');
-      // Example navigation (optional):
-      // import { useRouter } from 'next/navigation';
-      // const router = useRouter();
-      // router.push('/dashboard'); // Or next step
+     // Handle success of saving preparation
+     console.log('Preparation saved successfully!'); // Log instead of alert for now
 
+     // Now, trigger the send endpoint
+     setSendStatus('sending');
+     try {
+       const sendResponse = await fetch(`/api/documents/${documentId}/send`, {
+         method: 'POST',
+         // No body needed for this specific endpoint based on its design
+       });
+
+       if (!sendResponse.ok) {
+         const sendErrorData = await sendResponse.json();
+         throw new Error(sendErrorData.error || `Send failed: ${sendResponse.status}`);
+       }
+
+       // Handle success of sending
+       setSendStatus('success');
+       alert('Document sent to the first signer!'); // Confirmation message
+       // Optionally navigate or update UI further
+       // Example navigation (optional):
+       // import { useRouter } from 'next/navigation';
+       // const router = useRouter();
+       // router.push('/dashboard');
+
+     } catch (sendErr: any) {
+       console.error('Failed to send document:', sendErr);
+       setSendStatus('error');
+       setSendError(sendErr.message || 'An unknown error occurred during sending.');
+       alert(`Error sending document: ${sendErr.message || 'An unknown error occurred.'}`); // Simple feedback
+     }
     } catch (error: any) {
       console.error('Failed to save document preparation:', error);
-      setSaveError(error.message || 'An unknown error occurred.');
-      alert(`Error saving: ${error.message || 'An unknown error occurred.'}`); // Simple feedback for now
-    } finally {
+     // Error from the initial save preparation step
+     setSaveError(error.message || 'An unknown error occurred during save.');
+     alert(`Error saving preparation: ${error.message || 'An unknown error occurred.'}`); // Simple feedback for save error
+   } finally {
       setIsSaving(false);
     }
   };
@@ -216,9 +245,12 @@ const DocumentPreparationAreaInternal: React.FC<DocumentPreparationAreaProps> = 
              className="w-full bg-brand-primary text-white py-2 px-4 rounded hover:bg-brand-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
            >
              {isSaving ? 'Saving...' : 'Save & Continue'}
-           </button>
-           {saveError && <p className="text-red-600 text-sm mt-2">{saveError}</p>}
-         </div>
+          </button>
+          {saveError && <p className="text-red-600 text-sm mt-1">Save Error: {saveError}</p>}
+          {sendStatus === 'sending' && <p className="text-blue-600 text-sm mt-1">Sending document...</p>}
+          {sendError && <p className="text-red-600 text-sm mt-1">Send Error: {sendError}</p>}
+          {sendStatus === 'success' && <p className="text-green-600 text-sm mt-1">Document sent successfully!</p>}
+        </div>
       </div>
 
       {/* Drop Target Area & PDF Viewer */}
