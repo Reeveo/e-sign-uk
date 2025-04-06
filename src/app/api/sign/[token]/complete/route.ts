@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { Database } from '@/types/database.types';
 import crypto from 'crypto'; // Import crypto for token generation
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'; // Import pdf-lib
+import { PDFDocument, rgb, StandardFonts, PDFFont } from 'pdf-lib'; // Import pdf-lib
 import { Buffer } from 'buffer'; // Needed for handling binary data
 
 type FieldDataMap = { [fieldId: string]: string | null }; // Assuming fieldId is string, value can be string or null
@@ -183,7 +183,7 @@ export async function POST(
                     // 1. Fetch all necessary data
                     const { data: documentData, error: docError } = await supabase
                         .from('documents')
-                        .select('id, name, storage_path')
+                        .select('id, name, storage_path, user_id') // Added user_id to fetch creator
                         .eq('id', document_id)
                         .single();
 
@@ -215,23 +215,7 @@ export async function POST(
                     if (downloadError || !downloadData) throw new Error(`Failed to download original PDF: ${downloadError?.message}`);
                     const originalPdfBytes = await downloadData.arrayBuffer();
 
-                    // 3. Generate Audit Trail Log
-                    let auditTrailLog = `--- Audit Trail for Document: ${documentData.name} (ID: ${documentData.id}) ---\n`;
-                    auditTrailLog += `Completion Time: ${new Date().toISOString()}\n\n`;
-                    if (allSigners && allSigners.length > 0) {
-                        allSigners.forEach((signer, index) => {
-                            auditTrailLog += `Signer ${index + 1}:\n`;
-                            auditTrailLog += `  Email: ${signer.signer_email}\n`;
-                            auditTrailLog += `  Signed At: ${signer.signed_at}\n`;
-                            auditTrailLog += `  IP Address: ${signer.ip_address}\n\n`;
-                        });
-                    } else {
-                        auditTrailLog += "No completed signers found (this might indicate an issue).\n\n";
-                    }
-                    auditTrailLog += `Intent: All parties agreed to conduct this transaction electronically.\n`;
-                    auditTrailLog += `--- End Audit Trail ---`;
-
-                    console.log(auditTrailLog); // Log the audit trail
+                    // 3. (Placeholder - Audit trail generation moved after PDF modification)
 
                     // 4. Modify PDF with field data
                     const pdfDoc = await PDFDocument.load(originalPdfBytes);
@@ -287,29 +271,157 @@ export async function POST(
                         }
                     }
 
-                    // 5. Save modified PDF to ArrayBuffer
+                    // 5. Save PDF with embedded fields
                     const modifiedPdfBytes = await pdfDoc.save();
 
-                    // 6. Upload modified PDF to Storage
+                    // --- Generate Audit Trail PDF Page ---
+                    const auditPdfDoc = await PDFDocument.create();
+                    const auditFont = await auditPdfDoc.embedFont(StandardFonts.Helvetica);
+                    const auditPage = auditPdfDoc.addPage();
+                    const { width: auditPageWidth, height: auditPageHeight } = auditPage.getSize();
+                    let yPosition = auditPageHeight - 50; // Start from top
+                    const xMargin = 50;
+                    const lineSpacing = 18;
+                    const titleSize = 16;
+                    const headingSize = 12;
+                    const textSize = 10;
+
+                    const drawTextLine = (text: string, font: PDFFont, size: number, indent = 0) => {
+                        if (yPosition < 40) return; // Stop if near bottom
+                        auditPage.drawText(text, {
+                            x: xMargin + indent,
+                            y: yPosition,
+                            font: font,
+                            size: size,
+                            color: rgb(0, 0, 0),
+                        });
+                        yPosition -= lineSpacing; // Move down for next line
+                    };
+
+                    drawTextLine('Audit Trail Certificate', auditFont, titleSize);
+                    yPosition -= lineSpacing; // Extra space after title
+
+                    drawTextLine(`Document Name: ${documentData.name}`, auditFont, headingSize);
+                    drawTextLine(`Document ID: ${documentData.id}`, auditFont, headingSize);
+                    drawTextLine(`Completion Time: ${new Date().toISOString()}`, auditFont, headingSize);
+                    yPosition -= lineSpacing; // Extra space
+
+                    drawTextLine('Signer Activity:', auditFont, headingSize);
+                    if (allSigners && allSigners.length > 0) {
+                        allSigners.forEach((signer, index) => {
+                            drawTextLine(`Signer ${index + 1}:`, auditFont, textSize, 10);
+                            drawTextLine(`Email: ${signer.signer_email}`, auditFont, textSize, 20);
+                            drawTextLine(`Signed At: ${signer.signed_at}`, auditFont, textSize, 20);
+                            drawTextLine(`IP Address: ${signer.ip_address ?? 'N/A'}`, auditFont, textSize, 20);
+                            yPosition -= lineSpacing * 0.5; // Space between signers
+                        });
+                    } else {
+                        drawTextLine('No completed signers found.', auditFont, textSize, 10);
+                    }
+                    yPosition -= lineSpacing; // Extra space
+
+                    drawTextLine('Consent:', auditFont, headingSize);
+                    drawTextLine('All parties agreed to use electronic records and signatures for this transaction.', auditFont, textSize, 10);
+
+                    const auditPdfBytes = await auditPdfDoc.save();
+                    // --- End Audit Trail PDF Page ---
+
+
+                    // --- (PDF Combination Removed) ---
+
+
+                    // 6. Upload Signed PDF and Audit Certificate PDF Separately
                     const signedPdfPath = `${documentData.storage_path.replace(/\.pdf$/i, '')}_signed.pdf`;
-                    const { error: uploadError } = await supabase
+                    const auditCertPath = `${documentData.storage_path.replace(/\.pdf$/i, '')}_audit_certificate.pdf`;
+
+                    // Upload Signed PDF
+                    const { error: uploadSignedError } = await supabase
                         .storage
                         .from('documents')
                         .upload(signedPdfPath, modifiedPdfBytes, {
                             contentType: 'application/pdf',
-                            upsert: true // Overwrite if it already exists
+                            upsert: true
                         });
 
-                    if (uploadError) {
-                        throw new Error(`Failed to upload signed PDF: ${uploadError.message}`);
+                    if (uploadSignedError) {
+                        throw new Error(`Failed to upload signed PDF: ${uploadSignedError.message}`);
                     }
-
                     console.log(`Signed PDF generated and uploaded to: ${signedPdfPath}`);
 
-                    // Optional: Update document record with signed path
-                    // await supabase.from('documents').update({ signed_storage_path: signedPdfPath }).eq('id', document_id);
+                    // Upload Audit Certificate PDF
+                    const { error: uploadAuditError } = await supabase
+                        .storage
+                        .from('documents')
+                        .upload(auditCertPath, auditPdfBytes, {
+                            contentType: 'application/pdf',
+                            upsert: true
+                        });
+
+                     if (uploadAuditError) {
+                        // Log error but don't necessarily fail the whole process if signed PDF uploaded
+                        console.error(`Failed to upload audit certificate PDF: ${uploadAuditError.message}`);
+                        // Depending on requirements, you might want to throw here or just log
+                    } else {
+                        console.log(`Audit Certificate PDF generated and uploaded to: ${auditCertPath}`);
+                    }
+
+                    // Optional: Update document record with paths (consider how to store multiple paths)
+                    // await supabase.from('documents').update({ signed_storage_path: signedPdfPath, audit_storage_path: auditCertPath }).eq('id', document_id);
+                    // --- Simulate Emailing Final Document ---
+                    let recipients: string[] = [];
+                    let creatorEmail: string | null = null;
+
+                    // Fetch creator email
+                    if (documentData.user_id) {
+                        const { data: userData, error: userError } = await supabase
+                            .from('users') // Assuming 'users' table in 'auth' schema
+                            .select('email')
+                            .eq('id', documentData.user_id)
+                            .single(); // Use .single() as user_id should be unique
+
+                        if (userError) {
+                             console.error(`Error fetching creator email for user ${documentData.user_id}:`, userError);
+                        } else if (userData?.email) {
+                            creatorEmail = userData.email;
+                            recipients.push(creatorEmail);
+                        } else {
+                             console.warn(`Creator email not found for user ${documentData.user_id}`);
+                        }
+                    } else {
+                        console.warn(`Document ${document_id} has no associated user_id.`);
+                    }
 
 
+                    // Add signer emails
+                    if (allSigners) {
+                        allSigners.forEach(signer => {
+                            if (signer.signer_email && !recipients.includes(signer.signer_email)) {
+                                recipients.push(signer.signer_email);
+                            }
+                        });
+                    }
+
+                    console.log(`--- SIMULATED EMAIL (Final Document) ---`);
+                    console.log(`Document: ${documentData.name} (ID: ${document_id})`);
+                    console.log(`Status: Completed`);
+                    console.log(`Recipients: ${recipients.join(', ')}`);
+                    console.log(`Attachments: ${signedPdfPath.split('/').pop()}, ${auditCertPath.split('/').pop()}`); // Filenames
+
+                    // Optional: Generate signed URL for download link
+                    // const { data: signedUrlData, error: urlError } = await supabase
+                    //     .storage
+                    //     .from('documents')
+                    //     .createSignedUrl(signedPdfPath, 60 * 60 * 24 * 7); // Signed Doc URL
+                    // Add separate logic if URL for audit cert is also needed
+
+                    // if (urlError) {
+                    //     console.error('Error generating signed URL:', urlError);
+                    // } else if (signedUrlData) {
+                    //     console.log(`Download Link (expires in 7 days): ${signedUrlData.signedUrl}`);
+                    // }
+
+                    console.log(`---------------------------------------`);
+                    // --- End Simulate Email ---
                 } catch (generationError: any) {
                     console.error(`Error during final document generation for ${document_id}:`, generationError);
                     // Don't fail the entire request, but log the error.
