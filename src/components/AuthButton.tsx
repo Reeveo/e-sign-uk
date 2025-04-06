@@ -57,6 +57,12 @@ export default function AuthButton() {
       {session ? (
         <>
           <span>{session.user.email}</span>
+          <Link
+            href="/dashboard"
+            className="py-2 px-3 flex rounded-md no-underline bg-gray-200 hover:bg-gray-300 text-gray-800" // Added dashboard link with styling
+          >
+            Dashboard
+          </Link>
           <button
             onClick={handleLogout}
             className="py-2 px-4 rounded-md no-underline bg-btn-background hover:bg-btn-background-hover" // Assuming these classes exist in globals.css
