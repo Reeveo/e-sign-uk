@@ -101,6 +101,7 @@ export default function DocumentUpload({ userId }: DocumentUploadProps) {
           accept=".pdf"
           onChange={handleFileChange}
           disabled={loading}
+          data-testid="file-input" // Add data-testid
         />
         <button type="submit" disabled={loading || !file}>
           {loading ? 'Uploading...' : 'Upload'}
