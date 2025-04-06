@@ -75,7 +75,7 @@ export default function DocumentList({ documents }: DocumentListProps) {
                 </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {format(new Date(doc.created_at), 'PPpp')} {/* Format date */}
+                {format(new Date(doc.created_at), 'dd MMM yyyy')} {/* Format date as DD MMM YYYY */}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 {/* Style Prepare link as a button */}
@@ -85,12 +85,7 @@ export default function DocumentList({ documents }: DocumentListProps) {
                 >
                   Prepare
                 </Link>
-                <Link
-                  href={`/documents/${doc.id}/view`} // Placeholder link
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  View
-                </Link>
+                {/* Removed View link as per requirements */}
               </td>
             </tr>
           ))}
