@@ -3,7 +3,7 @@ import React from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-import PdfViewer from '@/components/PdfViewer';
+import DocumentPreparationArea from '@/components/DocumentPreparationArea'; // Import the new client component
 
 interface PrepareDocumentPageProps {
   params: {
@@ -53,14 +53,13 @@ export default async function PrepareDocumentPage({ params }: PrepareDocumentPag
       <h1 className="text-2xl font-bold mb-4">Prepare Document: {document.name || documentId}</h1>
       {/* Using literal && */}
       {signedUrlError && <p className="text-red-500">{signedUrlError}</p>}
+      {/* Render the interactive preparation area if URL is available */}
       {signedUrl && !signedUrlError && (
-        <div>
-          <p className="text-sm text-gray-500 mb-2">Document preview:</p>
-          <PdfViewer signedUrl={signedUrl} />
-        </div>
+         <DocumentPreparationArea signedUrl={signedUrl} documentName={document.name || documentId} />
       )}
+      {/* Show loading state if URL is not yet available and no error occurred */}
       {!signedUrl && !signedUrlError && (
-         <p>Loading document...</p>
+         <p className="text-center mt-8">Loading document...</p>
       )}
     </div>
   );
