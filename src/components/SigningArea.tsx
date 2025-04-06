@@ -19,6 +19,7 @@ type DocumentField = {
 };
 
 interface SigningAreaProps {
+  token: string; // Added: The signing token from the URL
   signedUrl: string;
   documentName: string;
   signerEmail: string;
@@ -26,6 +27,7 @@ interface SigningAreaProps {
 }
 
 const SigningArea: React.FC<SigningAreaProps> = ({
+  token, // Added
   signedUrl,
   documentName,
   signerEmail,
@@ -36,7 +38,9 @@ const SigningArea: React.FC<SigningAreaProps> = ({
   // Unified state for all field data (signatures, text, dates)
   const [fieldDataMap, setFieldDataMap] = useState<Record<string, SignatureData | string>>({});
   const [consentGiven, setConsentGiven] = useState(false); // State for consent checkbox
-  const [isCompleting, setIsCompleting] = useState(false); // State for completion message
+  const [isCompleting, setIsCompleting] = useState(false); // State for API call in progress
+  const [completionMessage, setCompletionMessage] = useState<string | null>(null); // Success/Error message
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // Helper function to format date as DD MMM YYYY
   const formatDate = (date: Date): string => {
     const day = date.getDate().toString().padStart(2, '0');
@@ -98,12 +102,54 @@ const SigningArea: React.FC<SigningAreaProps> = ({
     setConsentGiven(event.target.checked);
   };
 
-  const handleFinishSigning = () => {
-    console.log("Finish Signing clicked. Consent given. All fields filled.");
+  const handleFinishSigning = async () => {
+    if (!canFinish || isCompleting) return;
+
     setIsCompleting(true);
-    // TODO: Implement actual submission logic here
-    // For now, just show a message for a short duration
-    setTimeout(() => setIsCompleting(false), 3000); // Hide message after 3 seconds
+    setCompletionMessage(null);
+    setErrorMessage(null);
+
+    // Prepare payload: Serialize SignatureData if necessary
+    const payload: Record<string, string | null> = {};
+    for (const [fieldId, data] of Object.entries(fieldDataMap)) {
+        if (typeof data === 'object' && data !== null && 'type' in data && 'data' in data) {
+            // It's SignatureData, serialize it (e.g., as JSON string)
+            payload[fieldId] = JSON.stringify(data);
+        } else if (typeof data === 'string') {
+            // It's already a string (text, date, etc.)
+            payload[fieldId] = data;
+        } else {
+            payload[fieldId] = null; // Or handle unexpected types appropriately
+        }
+    }
+
+
+    try {
+      const response = await fetch(`/api/sign/${token}/complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload), // Send the processed payload
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      // Handle success
+      const result = await response.json();
+      setCompletionMessage(result.message || 'Thank you for signing!');
+      // Optional: Redirect after a delay or based on response
+      // setTimeout(() => window.location.href = '/dashboard', 2000); // Example redirect
+
+    } catch (error: any) {
+      console.error('Error finishing signing:', error);
+      setErrorMessage(error.message || 'An unexpected error occurred.');
+    } finally {
+      setIsCompleting(false);
+    }
   };
 
   // Determine if all required fields for the current signer are filled
@@ -197,30 +243,41 @@ const SigningArea: React.FC<SigningAreaProps> = ({
         onApplySignature={handleApplySignature}
         signingFieldId={signingFieldId}
       />
-      <footer className="p-4 bg-gray-100 border-t flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            id="consentCheckbox"
-            checked={consentGiven}
-            onChange={handleConsentChange}
-            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-          />
-          <label htmlFor="consentCheckbox" className="text-sm text-gray-700">
-            I agree to use electronic records and signatures.
-          </label>
+      <footer className="p-4 bg-gray-100 border-t flex flex-col items-center gap-4">
+         {/* Completion/Error Messages */}
+         {completionMessage && (
+            <p className="text-green-600 font-semibold">{completionMessage}</p>
+         )}
+         {errorMessage && (
+            <p className="text-red-600 font-semibold">{errorMessage}</p>
+         )}
+
+        <div className="w-full flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="flex items-center space-x-2">
+            <input
+                type="checkbox"
+                id="consentCheckbox"
+                checked={consentGiven}
+                onChange={handleConsentChange}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                disabled={!!completionMessage} // Disable if already completed
+            />
+            <label htmlFor="consentCheckbox" className="text-sm text-gray-700">
+                I agree to use electronic records and signatures.
+            </label>
+            </div>
+            <button
+            onClick={handleFinishSigning}
+            disabled={!canFinish || isCompleting || !!completionMessage} // Disable if not ready, completing, or already completed
+            className={`px-6 py-2 rounded text-white font-semibold transition-colors duration-200 ease-in-out ${
+                canFinish && !isCompleting && !completionMessage
+                ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+                : 'bg-gray-400 cursor-not-allowed'
+            }`}
+            >
+            {isCompleting ? 'Completing...' : (completionMessage ? 'Completed' : 'Finish Signing')}
+            </button>
         </div>
-        <button
-          onClick={handleFinishSigning}
-          disabled={!canFinish || isCompleting}
-          className={`px-6 py-2 rounded text-white font-semibold transition-colors duration-200 ease-in-out ${
-            canFinish && !isCompleting
-              ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
-              : 'bg-gray-400 cursor-not-allowed'
-          }`}
-        >
-          {isCompleting ? 'Completing...' : 'Finish Signing'}
-        </button>
       </footer>
     </div>
   );

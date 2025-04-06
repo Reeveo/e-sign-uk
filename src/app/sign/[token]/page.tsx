@@ -96,6 +96,7 @@ export default async function SigningPage({ params }: SigningPageProps) {
   // 6. Pass data to the Client Component
   return (
     <SigningArea
+      token={token} // Pass the token down
       signedUrl={signedUrl}
       documentName={documentName}
       signerEmail={signer_email}
