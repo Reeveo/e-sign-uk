@@ -49,14 +49,14 @@ export default function AuthButton() {
 
   // Optional: Render nothing or a loading indicator while checking session
   if (loading) {
-    return <div className="flex items-center gap-4">Loading...</div>;
+    return <div className="flex items-center gap-4 text-gray-800 dark:text-gray-200">Loading...</div>;
   }
 
   return (
     <div className="flex items-center gap-4">
       {session ? (
         <>
-          <span>{session.user.email}</span>
+          <span className="text-gray-800 dark:text-gray-200">{session.user.email}</span>
           <Link
             href="/dashboard"
             className="py-2 px-3 flex rounded-md no-underline bg-gray-200 hover:bg-gray-300 text-gray-800" // Neutral dashboard link styling

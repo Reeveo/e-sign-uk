@@ -94,21 +94,31 @@ export default function DocumentUpload({ userId }: DocumentUploadProps) {
 
   return (
     <div>
-      <h2>Upload Document (PDF only)</h2>
-      <form onSubmit={handleUpload}>
-        <input
-          type="file"
-          accept=".pdf"
-          onChange={handleFileChange}
-          disabled={loading}
-          data-testid="file-input" // Add data-testid
-        />
-        <button type="submit" disabled={loading || !file}>
+      <h2 className="text-base font-medium text-gray-700 mb-3">Upload Document (PDF only)</h2>
+      <form onSubmit={handleUpload} className="space-y-4">
+        <div>
+          <label htmlFor="file-upload" className="sr-only">Choose file</label>
+          <input
+            id="file-upload"
+            name="file-upload"
+            type="file"
+            accept=".pdf"
+            onChange={handleFileChange}
+            disabled={loading}
+            data-testid="file-input"
+            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-secondary file:text-white hover:file:bg-brand-secondary/90 disabled:opacity-50"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={loading || !file}
+          className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-brand-white bg-brand-primary hover:bg-brand-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           {loading ? 'Uploading...' : 'Upload'}
         </button>
       </form>
-      {message && <p style={{ color: 'green' }}>{message}</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {message && <p className="text-sm text-brand-green">{message}</p>}
+      {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
   );
 }
