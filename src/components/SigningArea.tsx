@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, ChangeEvent, useMemo } from 'react'; // Added ChangeEvent, useMemo
 import SignatureModal, { SignatureData } from './SignatureModal';
 import PdfViewer from './PdfViewer'; // Assuming PdfViewer is in the same directory or path is correct
 // TODO: Define a proper type for DocumentField once database.types.ts is located/generated
@@ -35,6 +35,8 @@ const SigningArea: React.FC<SigningAreaProps> = ({
   const [signingFieldId, setSigningFieldId] = useState<string | null>(null);
   // Unified state for all field data (signatures, text, dates)
   const [fieldDataMap, setFieldDataMap] = useState<Record<string, SignatureData | string>>({});
+  const [consentGiven, setConsentGiven] = useState(false); // State for consent checkbox
+  const [isCompleting, setIsCompleting] = useState(false); // State for completion message
   // Helper function to format date as DD MMM YYYY
   const formatDate = (date: Date): string => {
     const day = date.getDate().toString().padStart(2, '0');
@@ -91,6 +93,26 @@ const SigningArea: React.FC<SigningAreaProps> = ({
     }));
     // Modal closes itself
   };
+
+  const handleConsentChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setConsentGiven(event.target.checked);
+  };
+
+  const handleFinishSigning = () => {
+    console.log("Finish Signing clicked. Consent given. All fields filled.");
+    setIsCompleting(true);
+    // TODO: Implement actual submission logic here
+    // For now, just show a message for a short duration
+    setTimeout(() => setIsCompleting(false), 3000); // Hide message after 3 seconds
+  };
+
+  // Determine if all required fields for the current signer are filled
+  const allFieldsFilled = useMemo(() => {
+    const signerFields = fields.filter(field => field.assigned_to_email === signerEmail);
+    return signerFields.every(field => fieldDataMap.hasOwnProperty(field.id));
+  }, [fields, signerEmail, fieldDataMap]);
+
+  const canFinish = allFieldsFilled && consentGiven;
 
   return (
     <div className="flex flex-col h-screen">
@@ -175,9 +197,30 @@ const SigningArea: React.FC<SigningAreaProps> = ({
         onApplySignature={handleApplySignature}
         signingFieldId={signingFieldId}
       />
-      <footer className="p-4 bg-gray-100 border-t">
-        {/* Placeholder for signing actions */}
-        <p className="text-sm text-gray-600">Review the document and fields above. Signing actions will appear here.</p>
+      <footer className="p-4 bg-gray-100 border-t flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="consentCheckbox"
+            checked={consentGiven}
+            onChange={handleConsentChange}
+            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+          <label htmlFor="consentCheckbox" className="text-sm text-gray-700">
+            I agree to use electronic records and signatures.
+          </label>
+        </div>
+        <button
+          onClick={handleFinishSigning}
+          disabled={!canFinish || isCompleting}
+          className={`px-6 py-2 rounded text-white font-semibold transition-colors duration-200 ease-in-out ${
+            canFinish && !isCompleting
+              ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+              : 'bg-gray-400 cursor-not-allowed'
+          }`}
+        >
+          {isCompleting ? 'Completing...' : 'Finish Signing'}
+        </button>
       </footer>
     </div>
   );
