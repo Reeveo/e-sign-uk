@@ -30,15 +30,31 @@ This document outlines the requirements for "E-Sign UK," a new web-based electro
 * Users can specify the signing order (sequential workflow).
 * Users can designate recipients who receive the final, fully executed document (can include signers and non-signers).
 *
-* **4.2.1 Document Preparation Workflow**
-* The typical user workflow for preparing a document for signing after initial upload is as follows:
-* 1.  **Upload Document:** The user uploads a PDF document via the `DocumentUpload` component on their Dashboard (FEAT-DOC-01).
-* 2.  **System Processing:** The system securely stores the document (Supabase Storage), creates a corresponding record in the database, and redirects the user to the dedicated Document Preparation page (`/documents/[documentId]/prepare`).
-* 3.  **Add Signers:** Using the `SignerInput` panel, the user adds the names and email addresses of all required signers (Part of FEAT-DOC-03).
-* 4.  **Set Signing Order:** The user defines the sequence in which signers must sign the document (Part of FEAT-DOC-03).
-* 5.  **Place Fields:** The user utilizes the `FieldPalette` and the `DocumentPreparationArea` (which includes the `PdfViewer`) to drag and drop required signature fields (Signature, Initials, Date Signed, Text Box, etc.) onto the document preview (FEAT-DOC-02).
-* 6.  **Assign Fields:** For each placed field, the user selects the field and uses the `FieldProperties` panel (or similar mechanism) to assign it to a specific signer added in step 3 (FEAT-DOC-02).
-* 7.  **Save Preparation:** The user saves the current state. This action persists the added signers, their order, the placed fields (type, position, assigned signer) to the database, associating them with the document record. The document is now ready to be sent (FEAT-DOC-04).
+* **4.2.1 Document Add & Preparation Workflow (End-to-End)**
+* This outlines the complete user journey from uploading a document to initiating the signing process:
+* 1.  **Upload Document (Dashboard):** The user initiates the process by uploading a PDF document using the `DocumentUpload` component on their Dashboard (FEAT-DOC-01).
+* 2.  **Initial Backend Processing:** Upon successful upload, the backend:
+    *   Securely stores the PDF file in Supabase Storage.
+    *   Creates a corresponding record in the `documents` table with an initial status (e.g., 'draft').
+* 3.  **Frontend Update (Dashboard):** The Dashboard UI updates, typically showing the newly uploaded document in the `DocumentList` with a "Prepare" button or similar call to action.
+* 4.  **Navigate to Preparation:** The user clicks the "Prepare" button, navigating them to the dedicated Document Preparation page (`/documents/[documentId]/prepare`).
+* 5.  **Document Preparation Steps:** On the preparation page, the user configures the document for signing:
+    *   **Add Signers:** Adds required signers (name, email) using the `SignerInput` panel (Part of FEAT-DOC-03).
+    *   **Set Signing Order:** Defines the sequence in which signers must sign (Part of FEAT-DOC-03).
+    *   **Place Fields:** Uses the `FieldPalette` and `DocumentPreparationArea` (including `PdfViewer`) to drag & drop fields (Signature, Date Signed, Text, etc.) onto the document (FEAT-DOC-02).
+    *   **Assign Fields:** Selects each placed field and assigns it to a specific signer using the `FieldProperties` panel (FEAT-DOC-02).
+* 6.  **Save Preparation ("Save & Continue"):** The user clicks "Save & Continue" (or a similar button) to finalize the preparation.
+* 7.  **Backend Save Processing:** This action triggers a request to the backend API (`/api/documents/[documentId]/prepare`):
+    *   The backend validates the preparation data (signers, fields, assignments).
+    *   Persists the signers, their order, field details (type, position, page, assigned signer ID), and any other preparation settings to the database, associating them with the document record.
+    *   Updates the document's status in the database to 'ready_to_send'.
+* 8.  **Automatic Send Trigger:** The successful completion of the `/prepare` API call (or a separate mechanism triggered by the status change) automatically initiates the sending process by calling the `/api/documents/[documentId]/send` endpoint. This endpoint:
+    *   Generates unique, secure signing tokens for each signer based on the defined order.
+    *   Updates the signer records in the database with their respective tokens.
+    *   Updates the document's status in the database to 'sent'.
+    *   Logs the initial notification event (e.g., email sent to the first signer).
+    *   Sends the actual email notification to the *first* signer in the sequence, containing their unique signing link (FEAT-DOC-04 Part 1 - Initiation).
+* 9.  **Frontend Confirmation:** The user is typically redirected back to the Dashboard or shown a confirmation message indicating the document preparation is complete and the signing process has been initiated. The document status on the Dashboard should reflect 'sent'.
 * FEAT-DOC-04: Sending & Notifications:
 * Initiate the signing process, sending an email notification to the first signer in the sequence via Mailgun.
 * Email should contain a secure, unique link to the signing page.

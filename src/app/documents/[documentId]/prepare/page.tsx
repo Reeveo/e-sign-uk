@@ -18,7 +18,7 @@ export default async function PrepareDocumentPage({ params }: PrepareDocumentPag
   // Fetch document data
   const { data: document, error: docError } = await supabase
     .from('documents')
-    .select('id, name, storage_path, user_id')
+    .select('id, filename, storage_path, user_id') // Corrected 'name' to 'filename'
     .eq('id', documentId)
     .single();
 
@@ -50,12 +50,12 @@ export default async function PrepareDocumentPage({ params }: PrepareDocumentPag
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Prepare Document: {document.name || documentId}</h1>
+      <h1 className="text-2xl font-bold mb-4">Prepare Document: {document.filename || documentId}</h1> {/* Corrected 'name' to 'filename' */}
       {/* Using literal && */}
       {signedUrlError && <p className="text-red-500">{signedUrlError}</p>}
       {/* Render the interactive preparation area if URL is available */}
       {signedUrl && !signedUrlError && (
-         <DocumentPreparationArea signedUrl={signedUrl} documentName={document.name || documentId} documentId={documentId} />
+         <DocumentPreparationArea signedUrl={signedUrl} documentName={document.filename || documentId} documentId={documentId} />
       )}
       {/* Show loading state if URL is not yet available and no error occurred */}
       {!signedUrl && !signedUrlError && (
