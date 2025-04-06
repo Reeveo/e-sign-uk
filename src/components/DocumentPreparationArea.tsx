@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useCallback } from 'react';
-import { DndProvider, useDrop, XYCoord } from 'react-dnd';
+import { DndProvider, useDrop } from 'react-dnd'; // Removed unused XYCoord
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import PdfViewer from './PdfViewer';
 import FieldPalette, { FieldTypes } from './FieldPalette';
@@ -14,6 +14,7 @@ interface PlacedField {
   type: string; // Corresponds to one of the FieldTypes values
   x: number; // Position relative to the drop target
   y: number;
+  pageNumber: number; // Page number where the field is placed
   signerEmail?: string; // Optional: Email of the assigned signer
 }
 
@@ -31,13 +32,16 @@ interface FieldDragItem {
 interface DocumentPreparationAreaProps {
   signedUrl: string;
   documentName: string;
+  documentId: string; // Add documentId prop
 }
 
-const DocumentPreparationAreaInternal: React.FC<DocumentPreparationAreaProps> = ({ signedUrl, documentName }) => {
+const DocumentPreparationAreaInternal: React.FC<DocumentPreparationAreaProps> = ({ signedUrl, documentName, documentId }) => {
   const [placedFields, setPlacedFields] = useState<PlacedField[]>([]);
   const [signers, setSigners] = useState<Signer[]>([]); // State for signers
   const dropTargetRef = useRef<HTMLDivElement>(null); // Ref for the drop target area
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null); // State for selected field ID
+  const [isSaving, setIsSaving] = useState<boolean>(false); // State for loading indicator
+  const [saveError, setSaveError] = useState<string | null>(null); // State for save errors
 
   // useDrop hook setup
   const [{ canDrop, isOver }, drop] = useDrop(() => ({
@@ -54,7 +58,8 @@ const DocumentPreparationAreaInternal: React.FC<DocumentPreparationAreaProps> = 
         // Add the new field to state
         setPlacedFields((prevFields) => [
           ...prevFields,
-          { id: uuidv4(), type: item.type, x, y },
+          // TODO: Determine actual page number based on drop location
+          { id: uuidv4(), type: item.type, x, y, pageNumber: 1 },
         ]);
       }
     },
@@ -134,6 +139,58 @@ const DocumentPreparationAreaInternal: React.FC<DocumentPreparationAreaProps> = 
   // Find the selected field object based on the ID
   const selectedField = placedFields.find(field => field.id === selectedFieldId) || null;
 
+  // Handler to save the preparation state
+  const handleSave = async () => {
+    setIsSaving(true);
+    setSaveError(null);
+
+    // Prepare payload for the API
+    const payload = {
+      signers: signers.map((signer, index) => ({
+        email: signer.email,
+        order: index + 1, // Order based on current array index
+        // name: signer.name // Include if name is stored in Signer interface
+      })),
+      fields: placedFields.map(field => ({
+        type: field.type,
+        pageNumber: field.pageNumber, // Use the stored page number
+        xCoordinate: field.x,
+        yCoordinate: field.y,
+        signerEmail: field.signerEmail ?? null, // Send null if undefined
+        // Include other properties like width, height, required if needed
+      })),
+    };
+
+    try {
+      const response = await fetch(`/api/documents/${documentId}/prepare`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      // Handle success (e.g., show message, navigate)
+      alert('Preparation saved successfully!');
+      // Example navigation (optional):
+      // import { useRouter } from 'next/navigation';
+      // const router = useRouter();
+      // router.push('/dashboard'); // Or next step
+
+    } catch (error: any) {
+      console.error('Failed to save document preparation:', error);
+      setSaveError(error.message || 'An unknown error occurred.');
+      alert(`Error saving: ${error.message || 'An unknown error occurred.'}`); // Simple feedback for now
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="flex flex-row gap-4 h-[calc(100vh-150px)]"> {/* Main flex container */}
       {/* Sidebar for Palette and Signers */}
@@ -151,6 +208,17 @@ const DocumentPreparationAreaInternal: React.FC<DocumentPreparationAreaProps> = 
            signers={signers}
            onAssignSigner={handleAssignSigner}
         />
+        {/* Save Button */}
+        <div className="mt-4 pt-4 border-t">
+           <button
+             onClick={handleSave}
+             disabled={isSaving}
+             className="w-full bg-brand-primary text-white py-2 px-4 rounded hover:bg-brand-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
+           >
+             {isSaving ? 'Saving...' : 'Save & Continue'}
+           </button>
+           {saveError && <p className="text-red-600 text-sm mt-2">{saveError}</p>}
+         </div>
       </div>
 
       {/* Drop Target Area & PDF Viewer */}

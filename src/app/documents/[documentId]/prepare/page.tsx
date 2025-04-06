@@ -55,7 +55,7 @@ export default async function PrepareDocumentPage({ params }: PrepareDocumentPag
       {signedUrlError && <p className="text-red-500">{signedUrlError}</p>}
       {/* Render the interactive preparation area if URL is available */}
       {signedUrl && !signedUrlError && (
-         <DocumentPreparationArea signedUrl={signedUrl} documentName={document.name || documentId} />
+         <DocumentPreparationArea signedUrl={signedUrl} documentName={document.name || documentId} documentId={documentId} />
       )}
       {/* Show loading state if URL is not yet available and no error occurred */}
       {!signedUrl && !signedUrlError && (
