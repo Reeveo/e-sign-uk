@@ -5,7 +5,9 @@ import { Database } from '@/types/database.types';
 import crypto from 'crypto'; // Import crypto for token generation
 import { PDFDocument, rgb, StandardFonts, PDFFont } from 'pdf-lib'; // Import pdf-lib
 import { Buffer } from 'buffer'; // Needed for handling binary data
-
+import { sendEmail } from '@/lib/email/sendEmail'; // Import the email utility
+import { InvitationEmail } from '@/components/email/InvitationEmail'; // Import the invitation template
+import { CompletionEmail } from '@/components/email/CompletionEmail'; // Import the completion template
 type FieldDataMap = { [fieldId: string]: string | null }; // Assuming fieldId is string, value can be string or null
 
 export async function POST(
@@ -122,6 +124,20 @@ export async function POST(
 
         if (updateSignerError) throw updateSignerError;
 
+        // --- Fetch Document Details (Needed for emails) ---
+        const { data: documentDetails, error: docDetailsError } = await supabase
+            .from('documents')
+            .select('id, name, user_id, storage_path') // Select name, user_id, storage_path
+            .eq('id', document_id)
+            .single();
+
+        if (docDetailsError || !documentDetails) {
+            console.error('Error fetching document details for email:', docDetailsError);
+            // Decide if this is fatal. For now, log and continue, emails might lack context.
+            // throw new Error(`Failed to fetch document details: ${docDetailsError?.message}`);
+        }
+        const documentName = documentDetails?.name ?? 'Document'; // Use fetched name or default
+
         // --- Workflow Progression Logic ---
 
         // Find the next signer in the sequence
@@ -158,12 +174,25 @@ export async function POST(
                 // Log error, but don't fail the request for the current signer
             } else {
                 // Construct signing URL (adjust base URL if needed)
-                const signingUrl = `${request.nextUrl.origin}/sign/${newSigningToken}`;
-                console.log(`--- SIMULATED EMAIL ---`);
-                console.log(`To: ${nextSigner.signer_email}`);
-                console.log(`Subject: Document requires your signature`);
-                console.log(`Body: Please sign the document using this link: ${signingUrl}`);
-                console.log(`-----------------------`);
+                const signingUrl = `${process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin}/sign/${newSigningToken}`;
+
+                // Send invitation email to next signer
+                const { error: emailError } = await sendEmail({
+                    to: nextSigner.signer_email,
+                    subject: `Invitation to Sign: ${documentName}`,
+                    react: <InvitationEmail // Use JSX syntax
+                        signingUrl={signingUrl}
+                        documentName={documentName}
+                        // senderName: could fetch original sender if needed
+                    />,
+                });
+
+                if (emailError) {
+                    console.error(`Failed to send invitation email to next signer ${nextSigner.signer_email}:`, emailError);
+                    // Log error, but don't fail the request
+                } else {
+                    console.log(`Successfully sent invitation email to next signer ${nextSigner.signer_email}`);
+                }
             }
         } else {
             // No next signer, mark document as completed
@@ -180,14 +209,17 @@ export async function POST(
 
                 // --- Generate Final Document and Audit Trail ---
                 try {
-                    // 1. Fetch all necessary data
-                    const { data: documentData, error: docError } = await supabase
-                        .from('documents')
-                        .select('id, name, storage_path, user_id') // Added user_id to fetch creator
-                        .eq('id', document_id)
-                        .single();
+                    // 1. Use already fetched document data
+                    // const { data: documentData, error: docError } = await supabase
+                    //     .from('documents')
+                    //     .select('id, name, storage_path, user_id') // Added user_id to fetch creator
+                    //     .eq('id', document_id)
+                    //     .single();
+                    // if (docError || !documentData) throw new Error(`Failed to fetch document details: ${docError?.message}`);
+                    // Use documentDetails fetched earlier
+                    const documentData = documentDetails;
+                    if (!documentData) throw new Error(`Document details unavailable for final processing.`);
 
-                    if (docError || !documentData) throw new Error(`Failed to fetch document details: ${docError?.message}`);
 
                     const { data: allSigners, error: signersError } = await supabase
                         .from('document_signers')
@@ -367,30 +399,25 @@ export async function POST(
 
                     // Optional: Update document record with paths (consider how to store multiple paths)
                     // await supabase.from('documents').update({ signed_storage_path: signedPdfPath, audit_storage_path: auditCertPath }).eq('id', document_id);
-                    // --- Simulate Emailing Final Document ---
+                    // --- Send Completion Emails ---
                     let recipients: string[] = [];
                     let creatorEmail: string | null = null;
 
-                    // Fetch creator email
+                    // Fetch creator email (using auth.users table)
                     if (documentData.user_id) {
-                        const { data: userData, error: userError } = await supabase
-                            .from('users') // Assuming 'users' table in 'auth' schema
-                            .select('email')
-                            .eq('id', documentData.user_id)
-                            .single(); // Use .single() as user_id should be unique
+                        const { data: authUser, error: authUserError } = await supabase.auth.admin.getUserById(documentData.user_id);
 
-                        if (userError) {
-                             console.error(`Error fetching creator email for user ${documentData.user_id}:`, userError);
-                        } else if (userData?.email) {
-                            creatorEmail = userData.email;
+                        if (authUserError) {
+                             console.error(`Error fetching creator auth user ${documentData.user_id}:`, authUserError);
+                        } else if (authUser?.user?.email) {
+                            creatorEmail = authUser.user.email;
                             recipients.push(creatorEmail);
                         } else {
-                             console.warn(`Creator email not found for user ${documentData.user_id}`);
+                             console.warn(`Creator email not found for auth user ${documentData.user_id}`);
                         }
                     } else {
                         console.warn(`Document ${document_id} has no associated user_id.`);
                     }
-
 
                     // Add signer emails
                     if (allSigners) {
@@ -401,27 +428,55 @@ export async function POST(
                         });
                     }
 
-                    console.log(`--- SIMULATED EMAIL (Final Document) ---`);
-                    console.log(`Document: ${documentData.name} (ID: ${document_id})`);
-                    console.log(`Status: Completed`);
-                    console.log(`Recipients: ${recipients.join(', ')}`);
-                    console.log(`Attachments: ${signedPdfPath.split('/').pop()}, ${auditCertPath.split('/').pop()}`); // Filenames
+                    if (recipients.length > 0) {
+                        console.log(`Preparing completion emails for: ${recipients.join(', ')}`);
 
-                    // Optional: Generate signed URL for download link
-                    // const { data: signedUrlData, error: urlError } = await supabase
-                    //     .storage
-                    //     .from('documents')
-                    //     .createSignedUrl(signedPdfPath, 60 * 60 * 24 * 7); // Signed Doc URL
-                    // Add separate logic if URL for audit cert is also needed
+                        // Generate signed URLs for downloads (7-day expiry)
+                        const expiresIn = 60 * 60 * 24 * 7;
+                        const { data: signedDocUrlData, error: signedDocUrlError } = await supabase
+                            .storage
+                            .from('documents')
+                            .createSignedUrl(signedPdfPath, expiresIn);
 
-                    // if (urlError) {
-                    //     console.error('Error generating signed URL:', urlError);
-                    // } else if (signedUrlData) {
-                    //     console.log(`Download Link (expires in 7 days): ${signedUrlData.signedUrl}`);
-                    // }
+                        const { data: auditCertUrlData, error: auditCertUrlError } = await supabase
+                            .storage
+                            .from('documents')
+                            .createSignedUrl(auditCertPath, expiresIn);
 
-                    console.log(`---------------------------------------`);
-                    // --- End Simulate Email ---
+                        if (signedDocUrlError || !signedDocUrlData?.signedUrl) {
+                            console.error('Error generating signed URL for signed document:', signedDocUrlError);
+                            // Decide how to proceed - maybe send email without link? For now, log and skip links.
+                        }
+                        if (auditCertUrlError || !auditCertUrlData?.signedUrl) {
+                            console.error('Error generating signed URL for audit certificate:', auditCertUrlError);
+                            // Log and skip link.
+                        }
+
+                        const finalSignedDocumentUrl = signedDocUrlData?.signedUrl ?? '#'; // Provide fallback
+                        const finalAuditCertificateUrl = auditCertUrlData?.signedUrl ?? '#'; // Provide fallback
+
+                        // Send email to each recipient
+                        for (const recipientEmail of recipients) {
+                            const { error: emailError } = await sendEmail({
+                                to: recipientEmail,
+                                subject: `Completed: ${documentName}`,
+                                react: <CompletionEmail // Use JSX syntax
+                                    documentName={documentName}
+                                    signedDocumentUrl={finalSignedDocumentUrl}
+                                    auditCertificateUrl={finalAuditCertificateUrl}
+                                />,
+                            });
+
+                            if (emailError) {
+                                console.error(`Failed to send completion email to ${recipientEmail}:`, emailError);
+                            } else {
+                                console.log(`Successfully sent completion email to ${recipientEmail}`);
+                            }
+                        }
+                    } else {
+                        console.warn(`No recipients found to send completion email for document ${document_id}.`);
+                    }
+                    // --- End Send Completion Emails ---
                 } catch (generationError: any) {
                     console.error(`Error during final document generation for ${document_id}:`, generationError);
                     // Don't fail the entire request, but log the error.

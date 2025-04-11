@@ -56,10 +56,10 @@ This document outlines the requirements for "E-Sign UK," a new web-based electro
     *   Sends the actual email notification to the *first* signer in the sequence, containing their unique signing link (FEAT-DOC-04 Part 1 - Initiation).
 * 9.  **Frontend Confirmation:** The user is typically redirected back to the Dashboard or shown a confirmation message indicating the document preparation is complete and the signing process has been initiated. The document status on the Dashboard should reflect 'sent'.
 * FEAT-DOC-04: Sending & Notifications:
-* Initiate the signing process, sending an email notification to the first signer in the sequence via Mailgun.
+* Initiate the signing process, sending an email notification to the first signer in the sequence via Resend.
 * Email should contain a secure, unique link to the signing page.
 * Subsequent signers are notified via email only after the previous signer has completed their action.
-* Upon completion by all signers, the final executed document is emailed (as a PDF attachment or secure link) to all designated recipients via Mailgun.
+* Upon completion by all signers, the final executed document is emailed (as a PDF attachment or secure link) to all designated recipients via Resend.
 * Consider basic reminder notifications for pending signatures (future enhancement?).
 4.3 Signing Process
 * FEAT-SIGN-01: Secure Signing Page: Accessible via the unique link from the email. No login required for signers (unless they are also the document creator or an existing user).
@@ -120,7 +120,7 @@ This document outlines the requirements for "E-Sign UK," a new web-based electro
     • 6.4 Authentication: Supabase Auth
     • 6.5 File Storage: Supabase Storage
     • 6.6 Deployment: Vercel
-    • 6.7 Email Service: Mailgun (for transactional emails: invitations, completion notices)
+    • 6.7 Email Service: Resend (for transactional emails: invitations, completion notices)
     • 6.8 Styling: Tailwind CSS
     • 6.9 Local Development: Docker (configure docker-compose.yml to run Next.js app and potentially Supabase locally via its CLI/Docker image to mirror Vercel/Supabase cloud environment as closely as possible).
     • 6.10 Payment Integration: 
@@ -155,4 +155,4 @@ This document outlines the requirements for "E-Sign UK," a new web-based electro
     • Detailed definition and pricing for the Paid Tier?
     • Specific requirements for signature "genuineness" beyond the proposed audit trail for MVP? Is the audit trail sufficient for the target legal requirements in the UK? (Requires legal consultation).
     • Supported document upload formats beyond PDF initially? (Recommend PDF only for MVP).
-    • Specific error handling scenarios to define (e.g., Mailgun bounce handling).
+    • Specific error handling scenarios to define (e.g., Resend bounce handling).

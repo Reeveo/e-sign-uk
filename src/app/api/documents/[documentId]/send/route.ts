@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import crypto from 'crypto'; // For token generation
+import { sendEmail } from '@/lib/email/sendEmail'; // Import the email utility
+import { InvitationEmail } from '@/components/email/InvitationEmail'; // Import the email template
 
 export async function POST(
   request: Request,
@@ -24,7 +26,7 @@ export async function POST(
     // 2. Fetch document and verify ownership & status
     const { data: document, error: docError } = await supabase
       .from('documents')
-      .select('id, user_id, status')
+      .select('id, user_id, status, name') // Fetch document name
       .eq('id', documentId)
       .single();
 
@@ -107,12 +109,25 @@ export async function POST(
       // Don't necessarily fail the whole request, but log the inconsistency.
     }
 
-    // 8. "Send" email (Log to console for now)
-    console.log('--- Sending Email ---');
-    console.log(`To: ${firstSigner.email}`);
-    console.log(`Subject: Document Ready for Signing`);
-    console.log(`Body: Please sign the document by clicking the link: ${signingUrl}`);
-    console.log('---------------------');
+    // 8. Send invitation email using Resend
+    const { error: emailError } = await sendEmail({
+      to: firstSigner.email,
+      subject: `Invitation to Sign: ${document.name || 'Document'}`,
+      react: InvitationEmail({
+        signingUrl: signingUrl,
+        documentName: document.name || 'Document',
+        // Optionally add sender name if available/desired
+        // senderName: user.email || 'Someone',
+      }),
+    });
+
+    if (emailError) {
+      // Log the error but don't necessarily fail the request,
+      // as the document is marked as 'sent' in the DB.
+      console.error(`Failed to send invitation email to ${firstSigner.email}:`, emailError);
+    } else {
+      console.log(`Successfully sent invitation email to ${firstSigner.email}`);
+    }
 
     // 9. Return success
     return NextResponse.json({ message: 'Document sent successfully to the first signer.' }, { status: 200 });
