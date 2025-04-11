@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto'; // For token generation
 import { sendEmail } from '@/lib/email/sendEmail'; // Import the email utility
 import { InvitationEmail } from '@/components/email/InvitationEmail'; // Import the email template
-
+import { format } from 'date-fns'; // For date formatting
 export async function POST(
   request: Request,
   { params }: { params: { documentId: string } }
@@ -22,6 +22,32 @@ export async function POST(
       console.error('Authentication error:', authError);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // --- Free Tier Limit Check ---
+    const freeTierLimit = parseInt(process.env.NEXT_PUBLIC_FREE_TIER_LIMIT || '10', 10);
+    const currentYearMonth = format(new Date(), 'yyyy-MM');
+
+    const { data: usageData, error: usageError } = await supabase
+      .from('monthly_usage')
+      .select('documents_sent_count')
+      .eq('user_id', user.id)
+      .eq('year_month', currentYearMonth)
+      .maybeSingle(); // Use maybeSingle as the record might not exist yet
+
+    if (usageError) {
+      console.error('Error fetching monthly usage:', usageError);
+      return NextResponse.json({ error: 'Error checking usage limit.' }, { status: 500 });
+    }
+
+    if (usageData && usageData.documents_sent_count >= freeTierLimit) {
+      console.warn(`User ${user.id} reached free tier limit for ${currentYearMonth}.`);
+      return NextResponse.json(
+        { error: 'Free tier document limit reached for this month.' },
+        { status: 429 } // 429 Too Many Requests is appropriate here
+      );
+    }
+    // --- End Free Tier Limit Check ---
+
 
     // 2. Fetch document and verify ownership & status
     const { data: document, error: docError } = await supabase
@@ -94,6 +120,21 @@ export async function POST(
       );
     }
 
+    // --- Increment Usage Count ---
+    // Call the DB function to increment the count atomically
+    const { error: incrementError } = await supabase.rpc('increment_monthly_usage', {
+        p_user_id: user.id,
+        p_year_month: currentYearMonth, // Use the same variable from the check
+    });
+
+    if (incrementError) {
+        // Log the error, but proceed with sending as the core logic succeeded so far.
+        // Consider more robust error handling/rollback in production if needed.
+        console.error(`Failed to increment monthly usage for user ${user.id}:`, incrementError);
+    }
+    // --- End Increment Usage Count ---
+
+
     // 6. Construct signing URL (Replace with your actual domain)
     const signingUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/sign/${signingToken}`;
 
@@ -118,7 +159,7 @@ export async function POST(
         documentName: document.name || 'Document',
         // Optionally add sender name if available/desired
         // senderName: user.email || 'Someone',
-      }),
+      }) as React.ReactElement, // Explicitly cast to ReactElement
     });
 
     if (emailError) {
