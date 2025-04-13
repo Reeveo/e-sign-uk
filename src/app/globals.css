@@ -2,5 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Base styles for the application */
+@layer base {
+  body {
+    @apply bg-esign-background text-esign-primary-text;
+  }
+}
+
+/* Custom component classes */
+@layer components {
+  .esign-card {
+    @apply bg-esign-card p-6 rounded-lg shadow-sm border border-esign-border;
+  }
+  
+  .esign-button-primary {
+    @apply bg-esign-button-primary text-white px-4 py-2 rounded-md font-medium 
+    hover:bg-esign-button-primary-hover transition-colors duration-200;
+  }
+  
+  .esign-button-secondary {
+    @apply bg-esign-button-secondary text-esign-primary-text px-4 py-2 rounded-md font-medium 
+    border border-esign-button-secondary-border hover:bg-esign-button-secondary-hover transition-colors duration-200;
+  }
+  
+  .esign-status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .esign-status-waiting {
+    @apply esign-status-badge bg-esign-waiting bg-opacity-10 text-esign-waiting;
+  }
+  
+  .esign-status-signed {
+    @apply esign-status-badge bg-esign-signed bg-opacity-10 text-esign-signed;
+  }
+  
+  .esign-status-draft {
+    @apply esign-status-badge bg-esign-draft bg-opacity-10 text-esign-draft;
+  }
+}
+
 /* Removed custom :root variables, @theme block, dark mode media query, and body styles. */
 /* Rely on Tailwind utility classes applied in components for background/text colors. */

@@ -131,7 +131,7 @@ This document outlines the requirements for "E-Sign UK," a new web-based electro
     • Modern Aesthetic: Clean, professional look and feel using Tailwind CSS utility-first approach.
     • Responsiveness: Ensure seamless experience across desktop, tablet, and mobile devices.
     • Accessibility: Adhere to basic accessibility standards (WCAG AA where feasible).
-    - Colour branding is in RGB format, FFFFFF, 007EA7, 00A8E8 and a Green which compliments them. 
+    - Colour branding is in white with grey accents to make it a modern website with amazing UI and UX.
 8. Release Criteria (MVP)
     • All features listed under Section 4 (Key Features) are implemented and tested.
     • Core non-functional requirements (Security basics, Usability, Reliability) are met.

@@ -118,7 +118,7 @@ export default function DocumentUpload({ userId }: DocumentUploadProps) {
 
   return (
     <div>
-      <h2 className="text-base font-medium text-gray-900 mb-3">Upload Document (PDF only)</h2>
+      <h2 className="text-base font-medium text-esign-primary-text mb-3">Upload Document (PDF only)</h2>
       <form onSubmit={handleUpload} className="space-y-4">
         <div>
           <label htmlFor="file-upload" className="sr-only">Choose file</label>
@@ -130,15 +130,16 @@ export default function DocumentUpload({ userId }: DocumentUploadProps) {
             onChange={handleFileChange}
             disabled={loading}
             data-testid="file-input"
-            // Styling for file input
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-secondary file:text-white hover:file:bg-brand-secondary/90 disabled:opacity-50"
+            className="block w-full text-sm text-esign-secondary-text file:mr-4 file:py-2 file:px-4 
+            file:rounded-md file:border-0 file:text-sm file:font-semibold 
+            file:bg-esign-button-primary file:text-white 
+            hover:file:bg-esign-button-primary-hover disabled:opacity-50"
           />
         </div>
         <button
           type="submit"
           disabled={loading || !file}
-          // Styling for submit button (restored disabled:opacity-50)
-          className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-brand-white bg-brand-primary hover:bg-brand-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          className="esign-button-primary disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? 'Uploading...' : 'Upload'}
         </button>
@@ -147,12 +148,11 @@ export default function DocumentUpload({ userId }: DocumentUploadProps) {
       {uploadedDocumentId ? (
         <div className="mt-4 space-y-2">
             {/* Use message state for success message */}
-            <p className="text-sm text-brand-green">{message}</p>
+            <p className="text-sm text-esign-signed">{message}</p>
             <button
                 type="button"
                 onClick={handlePrepareClick}
-                // Styling for Prepare button
-                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand-primary hover:bg-brand-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary"
+                className="esign-button-primary"
             >
                 Prepare Document
             </button>
@@ -160,7 +160,7 @@ export default function DocumentUpload({ userId }: DocumentUploadProps) {
       ) : (
         <>
             {/* Show message only if it's set and there's no error */}
-            {message && !error && <p className="mt-4 text-sm text-brand-green">{message}</p>}
+            {message && !error && <p className="mt-4 text-sm text-esign-signed">{message}</p>}
             {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
         </>
       )}
